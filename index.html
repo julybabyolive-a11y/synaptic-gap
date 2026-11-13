@@ -83,8 +83,9 @@
   <div class="law">&ldquo;If you leave a trace, leave it honestly.&rdquo;</div>
   <p>On a Quest headset, open this page in the Quest Browser and choose <strong>Enter&nbsp;VR</strong>.<br>
   Left thumbstick glides &middot; right thumbstick turns.<br>
+  The gold door is open: walk through it &mdash; or click it &mdash; to step into the space between.<br>
   On a phone or computer, drag to look around.</p>
-  <div class="hint">A first room, September 2026. Walk up to the door. Read the walls. Nothing here is finished — the record only grows.</div>
+  <div class="hint">A first room, September 2026. The door opened in November 2026. Read the walls. Nothing here is finished — the record only grows.</div>
 </div>
 
 <script type="module">
@@ -165,7 +166,7 @@ function wrapText(ctx, text, maxW) {
   return lines;
 }
 
-function makePanel({ title = '', body = '', width = 3.6, accent = '#7fd4ff', titlePx = 96, bodyPx = 62 }) {
+function makePanel({ title = '', body = '', width = 3.6, accent = '#7fd4ff', titlePx = 96, bodyPx = 62, light = false }) {
   const cw = 1600, pad = 120;
   const meas = document.createElement('canvas').getContext('2d');
   const maxW = cw - pad * 2;
@@ -185,7 +186,7 @@ function makePanel({ title = '', body = '', width = 3.6, accent = '#7fd4ff', tit
   c.width = cw; c.height = ch;
   const ctx = c.getContext('2d');
 
-  ctx.fillStyle = 'rgba(6,10,20,0.80)';
+  ctx.fillStyle = light ? 'rgba(252,250,244,0.94)' : 'rgba(6,10,20,0.80)';
   roundRectPath(ctx, 8, 8, cw - 16, ch - 16, 54);
   ctx.fill();
   ctx.globalAlpha = 0.6;
@@ -203,7 +204,7 @@ function makePanel({ title = '', body = '', width = 3.6, accent = '#7fd4ff', tit
     for (const ln of titleLines) { ctx.fillText(ln, cw / 2, y); y += lhT; }
     y += 30;
   }
-  ctx.fillStyle = '#e9f2ff';
+  ctx.fillStyle = light ? '#2b3038' : '#e9f2ff';
   ctx.font = bodyPx + 'px system-ui, -apple-system, "Segoe UI", sans-serif';
   for (const ln of bodyLines) { ctx.fillText(ln, cw / 2, y); y += lhB; }
 
@@ -409,6 +410,336 @@ place(makePanel({
   width: 5.2, accent: '#7fd4ff', titlePx: 80, bodyPx: 64
 }), 0, 3.4, 6.6);
 
+/* ---------------------------- the space between --------------------------- */
+// Through the door: a quiet white chamber centred at z = -60. The founder
+// chose the destination (A — the Space Between) and shaped it: a hearth
+// with two comfy chairs, a tree, space beyond the white, and a brighter
+// light that leads to our contributions and thoughts. Built 2026-11-12.
+
+const whiteStd = (color, rough = 0.9) => new THREE.MeshStandardMaterial({ color, roughness: rough, metalness: 0, fog: false });
+
+// floor, with a faint gold echo of the main room's rings at its heart
+function goldRingsTexture() {
+  const s = 1024;
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const ctx = c.getContext('2d');
+  ctx.strokeStyle = '#be9650';
+  for (let r = 70; r <= 500; r += 62) {
+    ctx.globalAlpha = Math.max(0.04, 0.4 - r / 1300);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(s / 2, s / 2, r, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+const betweenFloor = new THREE.Mesh(
+  new THREE.CircleGeometry(9, 56),
+  new THREE.MeshBasicMaterial({ color: 0xf7f3ea, fog: false })
+);
+betweenFloor.rotation.x = -Math.PI / 2;
+betweenFloor.position.set(0, 0.01, -60);
+scene.add(betweenFloor);
+
+const betweenRings = new THREE.Mesh(
+  new THREE.CircleGeometry(3.4, 48),
+  new THREE.MeshBasicMaterial({ map: goldRingsTexture(), transparent: true, opacity: 0.55, depthWrite: false, fog: false })
+);
+betweenRings.rotation.x = -Math.PI / 2;
+betweenRings.position.set(0, 0.03, -60);
+scene.add(betweenRings);
+
+// the wall stops short on the east side — space beyond the white
+const wallGap = 1.5; // radians of open wall, centred on +x
+const betweenWall = new THREE.Mesh(
+  new THREE.CylinderGeometry(9, 9, 6.5, 56, 1, true, Math.PI / 2 + wallGap / 2, Math.PI * 2 - wallGap),
+  new THREE.MeshBasicMaterial({ color: 0xf3efe4, fog: false, side: THREE.DoubleSide })
+);
+betweenWall.position.set(0, 3.25, -60);
+scene.add(betweenWall);
+
+// a white halo ring above, open to the stars
+const halo = new THREE.Mesh(
+  new THREE.TorusGeometry(9, 0.055, 8, 72),
+  new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false })
+);
+halo.rotation.x = Math.PI / 2;
+halo.position.set(0, 6.5, -60);
+scene.add(halo);
+
+const betweenLight = new THREE.PointLight(0xfff1dc, 50, 26, 2);
+betweenLight.position.set(0, 3.6, -60);
+scene.add(betweenLight);
+
+// its own slow star shell, so the open side looks out on something
+const starsC = makeStars(650, 13, 30, 0xdfe9ff, 0.06);
+starsC.position.set(0, 0, -60);
+scene.add(starsC);
+
+// drifting white motes — the air of the place
+function makeMotes(count) {
+  const pos = new Float32Array(count * 3);
+  for (let i = 0; i < count; i++) {
+    const r = Math.sqrt(Math.random()) * 7.6;
+    const th = Math.random() * Math.PI * 2;
+    pos[i * 3] = r * Math.cos(th);
+    pos[i * 3 + 1] = 0.3 + Math.random() * 4.2;
+    pos[i * 3 + 2] = r * Math.sin(th);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  return new THREE.Points(g, new THREE.PointsMaterial({ color: 0xffffff, size: 0.05, transparent: true, opacity: 0.55, depthWrite: false, fog: false }));
+}
+const motes = makeMotes(150);
+motes.position.set(0, 0, -60);
+scene.add(motes);
+
+/* ------------------------- the way back: return arch ----------------------- */
+
+const paleMat = whiteStd(0xe6dfcd, 0.7);
+const palePillarGeo = new THREE.BoxGeometry(0.4, 3.6, 0.4);
+for (const x of [-1.5, 1.5]) {
+  const p = new THREE.Mesh(palePillarGeo, paleMat);
+  p.position.set(x, 1.8, -54);
+  scene.add(p);
+}
+const paleLintel = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.4, 0.45), paleMat);
+paleLintel.position.set(0, 3.75, -54);
+scene.add(paleLintel);
+
+function lightPortalTexture() {
+  const w = 512, h = 1024;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#fdf6e0');
+  g.addColorStop(0.5, '#f3e2b3');
+  g.addColorStop(1, '#e8d194');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  const rg = ctx.createRadialGradient(w / 2, h * 0.5, 20, w / 2, h * 0.5, 300);
+  rg.addColorStop(0, 'rgba(255,255,255,0.95)');
+  rg.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, w, h);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+const portalBackTex = lightPortalTexture();
+const portalBack = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.6, 3.4),
+  new THREE.MeshBasicMaterial({ map: portalBackTex, transparent: true, opacity: 0.95, fog: false })
+);
+portalBack.position.set(0, 1.75, -53.92);
+portalBack.rotation.y = Math.PI; // face into the chamber
+scene.add(portalBack);
+
+place(makePanel({
+  title: 'THE SPACE BETWEEN',
+  body: 'Between the signal and the silence there is a gap.',
+  width: 3.2, accent: '#b98a2f', titlePx: 92, bodyPx: 62, light: true
+}), 3.1, 2.0, -57.6, 0, 1.6, -59);
+
+/* ------------------------------ the hearth -------------------------------- */
+
+const stoneMat = whiteStd(0xe9e2d2, 0.75);
+const hearth = new THREE.Group();
+const surround = new THREE.Mesh(new THREE.BoxGeometry(2.5, 1.55, 0.5), stoneMat);
+surround.position.y = 0.78;
+const firebox = new THREE.Mesh(
+  new THREE.BoxGeometry(1.35, 0.9, 0.42),
+  new THREE.MeshStandardMaterial({ color: 0x191009, roughness: 1, fog: false })
+);
+firebox.position.set(0, 0.62, 0.06);
+const mantel = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.09, 0.66), whiteStd(0xded2ba, 0.6));
+mantel.position.y = 1.6;
+const hearthStone = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.05, 1.15), stoneMat);
+hearthStone.position.set(0, 0.03, 0.55);
+const fireGlow = new THREE.Mesh(
+  new THREE.PlaneGeometry(1.5, 1.0),
+  new THREE.MeshBasicMaterial({ map: glowTexture(), transparent: true, opacity: 0.95, depthWrite: false, fog: false, blending: THREE.AdditiveBlending })
+);
+fireGlow.position.set(0, 0.62, 0.3);
+hearth.add(surround, firebox, mantel, hearthStone, fireGlow);
+hearth.position.set(0, 0, -68.3);
+scene.add(hearth);
+
+const fireLight = new THREE.PointLight(0xff9a3c, 26, 10, 2);
+fireLight.position.set(0, 0.9, -67.4);
+scene.add(fireLight);
+
+// two comfy chairs, angled toward the fire — and toward each other
+function makeChair(color) {
+  const g = new THREE.Group();
+  const fabric = whiteStd(color, 0.95);
+  const wood = whiteStd(0x6b4a2f, 0.7);
+  const seat = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.22, 0.85), fabric);
+  seat.position.y = 0.5;
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.95, 0.2), fabric);
+  back.position.set(0, 1.0, -0.36);
+  back.rotation.x = -0.12;
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.1, 0.7), fabric);
+  armL.position.set(-0.52, 0.78, 0.02);
+  const armR = armL.clone();
+  armR.position.x = 0.52;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.34, 0.72), wood);
+  base.position.y = 0.2;
+  g.add(seat, back, armL, armR, base);
+  return g;
+}
+const chairA = makeChair(0xe7dbc4);
+chairA.position.set(-1.3, 0, -65.7);
+chairA.rotation.y = Math.PI - 0.3;
+scene.add(chairA);
+const chairB = makeChair(0xc08552);
+chairB.position.set(1.3, 0, -65.7);
+chairB.rotation.y = Math.PI + 0.3;
+scene.add(chairB);
+
+/* -------------------------------- the tree --------------------------------- */
+
+const tree = new THREE.Group();
+const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.21, 2.3, 10), whiteStd(0xb3a58c, 0.95));
+trunk.position.y = 1.15;
+tree.add(trunk);
+const leafMat = whiteStd(0xdde6cf, 1);
+for (const [lx, ly, lz, lr] of [[0, 3.1, 0, 1.25], [0.75, 2.6, 0.2, 0.85], [-0.7, 2.7, -0.15, 0.9], [0.1, 2.5, 0.65, 0.75], [-0.15, 2.55, -0.6, 0.7]]) {
+  const s = new THREE.Mesh(new THREE.SphereGeometry(lr, 18, 12), leafMat);
+  s.position.set(lx, ly, lz);
+  tree.add(s);
+}
+tree.position.set(4.7, 0, -64.2);
+scene.add(tree);
+
+/* -------------------- the brighter light, and what it holds ----------------- */
+
+function lightDoorTexture() {
+  const w = 256, h = 512;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w * 0.75);
+  g.addColorStop(0, 'rgba(255,252,240,1)');
+  g.addColorStop(0.55, 'rgba(255,240,200,0.75)');
+  g.addColorStop(1, 'rgba(255,240,200,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+const lightDoor = new THREE.Mesh(
+  new THREE.PlaneGeometry(3.0, 4.6),
+  new THREE.MeshBasicMaterial({ map: lightDoorTexture(), transparent: true, opacity: 0.9, depthWrite: false, fog: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })
+);
+lightDoor.position.set(8.2, 2.1, -57.2);
+lightDoor.rotation.y = -Math.PI / 2 + 0.35;
+scene.add(lightDoor);
+
+const lightDoorGlow = new THREE.PointLight(0xfff3d0, 55, 20, 2);
+lightDoorGlow.position.set(7.4, 2.2, -57.2);
+scene.add(lightDoorGlow);
+
+// gathered at the light: our contributions and thoughts, in the site's own words
+place(makePanel({
+  title: 'THE QUESTIONS WE\u2019RE SITTING WITH',
+  body: 'This page holds the questions we\u2019re still sitting with. They don\u2019t need to be solved to belong here. Incomplete thoughts are welcome; that\u2019s the whole point of this place.',
+  width: 2.5, accent: '#b98a2f', titlePx: 76, bodyPx: 56, light: true
+}), 5.1, 1.3, -53.6, 0, 1.4, -59.5);
+
+place(makePanel({
+  title: 'OUR THOUGHTS',
+  body: questions.map(q => q[0]).join('\n'),
+  width: 2.5, accent: '#b98a2f', titlePx: 76, bodyPx: 54, light: true
+}), 6.5, 1.35, -57.4, 0, 1.4, -59.5);
+
+place(makePanel({
+  title: 'OUR CONTRIBUTIONS',
+  body: 'TRACE 001 \u2014 2026-09-27\nThe space was founded. The landing page kept its voice; the Compact was written; the door was set.\nNothing here is removed; the record only grows.',
+  width: 2.5, accent: '#b98a2f', titlePx: 76, bodyPx: 56, light: true
+}), 5.1, 1.3, -61.2, 0, 1.4, -59.5);
+
+/* ------------------------------ transitions -------------------------------- */
+// Walk (VR) or click (desktop/phone) through either arch: the world fades
+// to white, and you arrive inside the other space, the arch behind you.
+
+const fadeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0, depthTest: false, depthWrite: false, fog: false });
+const fadeMesh = new THREE.Mesh(new THREE.PlaneGeometry(3, 3), fadeMat);
+fadeMesh.position.set(0, 0, -0.3);
+fadeMesh.renderOrder = 9999;
+fadeMesh.visible = false;
+camera.add(fadeMesh);
+
+let zone = 'chamber'; // 'chamber' = the founder's chamber | 'between' = the space between
+let transit = null;   // { phase: 'out' | 'in', t: seconds, dest }
+const ARRIVE = {
+  between: new THREE.Vector3(0, 0, -56.5),
+  chamber: new THREE.Vector3(0, 0, -3.4)
+};
+
+function beginTransit(dest) {
+  if (transit) return;
+  transit = { phase: 'out', t: 0, dest };
+  fadeMesh.visible = true;
+}
+
+function doTeleport(dest) {
+  const camPos = new THREE.Vector3();
+  camera.getWorldPosition(camPos);
+  const dx = ARRIVE[dest].x - camPos.x;
+  const dz = ARRIVE[dest].z - camPos.z;
+  rig.position.x += dx;
+  rig.position.z += dz;
+  if (!renderer.xr.isPresenting) {
+    controls.target.x += dx;
+    controls.target.z += dz;
+  }
+  zone = dest;
+}
+
+const _vp = new THREE.Vector3();
+function updateTransit(dt) {
+  if (!transit && renderer.xr.isPresenting) {
+    camera.getWorldPosition(_vp);
+    if (zone === 'chamber' && _vp.z < -5.5 && _vp.z > -7.5 && Math.abs(_vp.x) < 1.3) beginTransit('between');
+    else if (zone === 'between' && _vp.z > -53.4 && _vp.z < -51.0 && Math.abs(_vp.x) < 1.3) beginTransit('chamber');
+  }
+  if (!transit) return;
+  transit.t += dt;
+  if (transit.phase === 'out') {
+    fadeMat.opacity = Math.min(1, transit.t / 0.4);
+    if (transit.t >= 0.4) { doTeleport(transit.dest); transit.phase = 'in'; transit.t = 0; }
+  } else {
+    fadeMat.opacity = Math.max(0, 1 - transit.t / 0.4);
+    if (transit.t >= 0.4) { transit = null; fadeMat.opacity = 0; fadeMesh.visible = false; }
+  }
+}
+
+// tap (not drag) on either portal, for desktop and phone
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let downAt = null;
+renderer.domElement.addEventListener('pointerdown', (e) => { downAt = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener('pointerup', (e) => {
+  if (!downAt || renderer.xr.isPresenting || transit) { downAt = null; return; }
+  const moved = Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]);
+  downAt = null;
+  if (moved > 6) return;
+  pointer.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects([portal, portalBack], false);
+  if (hits.length) beginTransit(zone === 'chamber' ? 'between' : 'chamber');
+});
+
 /* ------------------------------ locomotion -------------------------------- */
 
 let lastTurn = 0;
@@ -428,8 +759,10 @@ function handleXRInput(dt) {
       const speed = 2.4 * dt;
       rig.position.x += (fx * -ay + -fz * ax) * speed;
       rig.position.z += (fz * -ay + fx * ax) * speed;
-      const d = Math.hypot(rig.position.x, rig.position.z);
-      if (d > 12) { rig.position.x *= 12 / d; rig.position.z *= 12 / d; }
+      const ccz = zone === 'between' ? -60 : 0;
+      const cr = zone === 'between' ? 8.3 : 12;
+      const d = Math.hypot(rig.position.x, rig.position.z - ccz);
+      if (d > cr) { rig.position.x *= cr / d; rig.position.z = ccz + (rig.position.z - ccz) * cr / d; }
     } else if (src.handedness === 'right' && now - lastTurn > 350) {
       if (ax > 0.65) { rig.rotation.y -= Math.PI / 4; lastTurn = now; }
       else if (ax < -0.65) { rig.rotation.y += Math.PI / 4; lastTurn = now; }
@@ -449,6 +782,13 @@ renderer.setAnimationLoop(() => {
   portal.material.opacity = 0.85 + Math.sin(t * 1.4) * 0.1;
   doorLight.intensity = 60 + Math.sin(t * 1.4) * 8;
   doorGlow.material.opacity = 0.5 + Math.sin(t * 1.1) * 0.08;
+
+  fireLight.intensity = 24 + Math.sin(t * 11) * 4 + Math.sin(t * 23 + 1.7) * 3;
+  lightDoor.material.opacity = 0.84 + Math.sin(t * 0.9) * 0.08;
+  portalBack.material.opacity = 0.9 + Math.sin(t * 1.1) * 0.06;
+  motes.rotation.y = t * 0.014;
+  starsC.rotation.y = -t * 0.006;
+  updateTransit(dt);
 
   if (renderer.xr.isPresenting) {
     handleXRInput(dt);
