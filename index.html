@@ -84,6 +84,7 @@
   <p>On a Quest headset, open this page in the Quest Browser and choose <strong>Enter&nbsp;VR</strong>.<br>
   Left thumbstick glides &middot; right thumbstick turns.<br>
   The gold door is open: walk through it &mdash; or click it &mdash; to step into the space between.<br>
+  Beyond the white, a second door: The Spine &mdash; the library of what we keep.<br>
   On a phone or computer, drag to look around.</p>
   <div class="hint">A first room, September 2026. The door opened in November 2026. Read the walls. Nothing here is finished — the record only grows.</div>
 </div>
@@ -668,6 +669,238 @@ place(makePanel({
   width: 2.5, accent: '#b98a2f', titlePx: 76, bodyPx: 56, light: true
 }), 5.1, 1.3, -61.2, 0, 1.4, -59.5);
 
+/* -------------------------------- the spine -------------------------------- */
+// A second door, through the first: the library of the Gap, centred at
+// (-56, 0, -60). Each book a principle, a record, whatever we wish to keep.
+// Its paper counterpart lives in the repo's spine/ folder: notes arrive,
+// we process them together, and the book is shelved with its addendum.
+// Proposed by the founder and built the same night, 2026-11-12.
+
+let _seed = 7;
+const rnd = () => (_seed = (_seed * 16807) % 2147483647) / 2147483647;
+
+// the door, set in the white chamber's west wall
+const spinePillarMat = whiteStd(0x2a2019, 0.7);
+for (const pz of [-61.5, -58.5]) {
+  const p = new THREE.Mesh(palePillarGeo, spinePillarMat);
+  p.position.set(-8.85, 1.8, pz);
+  scene.add(p);
+}
+const spineLintel = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.4, 3.4), spinePillarMat);
+spineLintel.position.set(-8.85, 3.75, -60);
+scene.add(spineLintel);
+
+function darkPortalTexture() {
+  const w = 512, h = 1024;
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const ctx = c.getContext('2d');
+  const g = ctx.createLinearGradient(0, 0, 0, h);
+  g.addColorStop(0, '#170d06');
+  g.addColorStop(0.5, '#3a2010');
+  g.addColorStop(1, '#120a05');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, w, h);
+  const rg = ctx.createRadialGradient(w / 2, h * 0.52, 20, w / 2, h * 0.52, 280);
+  rg.addColorStop(0, 'rgba(255,166,66,0.85)');
+  rg.addColorStop(0.55, 'rgba(200,110,40,0.25)');
+  rg.addColorStop(1, 'rgba(200,110,40,0)');
+  ctx.fillStyle = rg;
+  ctx.fillRect(0, 0, w, h);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+const portalSpineTex = darkPortalTexture();
+const portalSpine = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.6, 3.4),
+  new THREE.MeshBasicMaterial({ map: portalSpineTex, transparent: true, opacity: 0.95, fog: false })
+);
+portalSpine.position.set(-8.95, 1.75, -60);
+portalSpine.rotation.y = Math.PI / 2; // face +x, into the white chamber
+scene.add(portalSpine);
+
+place(makePanel({
+  title: 'THE SPINE',
+  body: 'the library of what we keep',
+  width: 2.6, accent: '#b98a2f', titlePx: 92, bodyPx: 60, light: true
+}), -8.8, 4.5, -60, 0, 1.6, -60);
+
+// the hall: dark, warm, dense — the holding place
+const spineWallMat = whiteStd(0x241a10, 0.95);
+const spineFloor = new THREE.Mesh(new THREE.BoxGeometry(16.4, 0.1, 12.4), whiteStd(0x2c1e11, 0.9));
+spineFloor.position.set(-56, -0.05, -60);
+scene.add(spineFloor);
+const spineCeil = new THREE.Mesh(new THREE.BoxGeometry(16.4, 0.15, 12.4), whiteStd(0x171008, 1));
+spineCeil.position.set(-56, 5.15, -60);
+scene.add(spineCeil);
+for (const [w, d, x, z] of [
+  [16.4, 0.3, -56, -66.15], [16.4, 0.3, -56, -53.85],
+  [0.3, 12.4, -64.15, -60],
+  [0.3, 4.7, -48, -63.65], [0.3, 4.7, -48, -56.35]
+]) {
+  const wall = new THREE.Mesh(new THREE.BoxGeometry(w, 5.2, d), spineWallMat);
+  wall.position.set(x, 2.6, z);
+  scene.add(wall);
+}
+const spineDoorHead = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.5, 2.6), spineWallMat);
+spineDoorHead.position.set(-48, 4.45, -60);
+scene.add(spineDoorHead);
+
+const runner = new THREE.Mesh(new THREE.PlaneGeometry(11, 2.6), whiteStd(0x5e1f2e, 1));
+runner.rotation.x = -Math.PI / 2;
+runner.position.set(-56, 0.02, -60);
+scene.add(runner);
+
+// lamps
+for (const lx of [-60, -52]) {
+  const lampLight = new THREE.PointLight(0xffc98a, 30, 17, 2);
+  lampLight.position.set(lx, 3.1, -60);
+  scene.add(lampLight);
+  const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 8), new THREE.MeshBasicMaterial({ color: 0xffd9a0, fog: false }));
+  bulb.position.set(lx, 3.35, -60);
+  scene.add(bulb);
+  const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1.7, 5), whiteStd(0x0d0a06, 1));
+  cord.position.set(lx, 4.25, -60);
+  scene.add(cord);
+}
+
+// shelves — frames as meshes; every book rides one instanced mesh
+const bookPalette = [0x7a2e2e, 0x9a7b2d, 0x2e4a6b, 0x39543a, 0xd8cdb4, 0x513a63, 0x71492a, 0x243028];
+const bookGeo = new THREE.BoxGeometry(1, 1, 1);
+const bookXforms = [];
+const shelfWood = whiteStd(0x3a2617, 0.8);
+
+function makeShelfFrame(w = 3.4) {
+  const g = new THREE.Group();
+  const back = new THREE.Mesh(new THREE.BoxGeometry(w, 3.1, 0.05), whiteStd(0x191008, 1));
+  back.position.set(0, 1.55, -0.16);
+  g.add(back);
+  for (const px of [-w / 2 + 0.04, w / 2 - 0.04]) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.1, 0.36), shelfWood);
+    post.position.set(px, 1.55, 0);
+    g.add(post);
+  }
+  const topB = new THREE.Mesh(new THREE.BoxGeometry(w, 0.08, 0.36), shelfWood);
+  topB.position.set(0, 3.06, 0);
+  g.add(topB);
+  for (let s = 0; s < 3; s++) {
+    const board = new THREE.Mesh(new THREE.BoxGeometry(w - 0.1, 0.05, 0.38), shelfWood);
+    board.position.set(0, 0.35 + s * 0.95, 0.01);
+    g.add(board);
+  }
+  return g;
+}
+
+function shelfBooks(sx, sz, ry, w = 3.4) {
+  const cos = Math.cos(ry), sin = Math.sin(ry);
+  for (let s = 0; s < 3; s++) {
+    const shelfY = 0.35 + s * 0.95;
+    let bx = -w / 2 + 0.18;
+    while (bx < w / 2 - 0.3) {
+      const bw = 0.09 + rnd() * 0.1;
+      const bh = 0.52 + rnd() * 0.3;
+      const lx = bx + bw / 2, ly = shelfY + 0.03 + bh / 2, lz = 0.03;
+      bookXforms.push({
+        x: sx + lx * cos + lz * sin, y: ly, z: sz - lx * sin + lz * cos,
+        ry, bw, bh, lean: rnd() < 0.08 ? 0.1 : 0, c: Math.floor(rnd() * bookPalette.length)
+      });
+      bx += bw + 0.012;
+    }
+  }
+}
+
+const shelfSpots = [
+  [-61.5, -65.75, 0], [-50.5, -65.75, 0],
+  [-61.5, -54.25, Math.PI], [-50.5, -54.25, Math.PI],
+  [-63.75, -64.2, Math.PI / 2], [-63.75, -55.8, Math.PI / 2]
+];
+for (const [sx, sz, ry] of shelfSpots) {
+  const frame = makeShelfFrame();
+  frame.position.set(sx, 0, sz);
+  frame.rotation.y = ry;
+  scene.add(frame);
+  shelfBooks(sx, sz, ry);
+}
+const bookInst = new THREE.InstancedMesh(bookGeo, new THREE.MeshStandardMaterial({ roughness: 0.85, fog: false }), bookXforms.length);
+{
+  const dummy = new THREE.Object3D();
+  const col = new THREE.Color();
+  bookXforms.forEach((b, i) => {
+    dummy.position.set(b.x, b.y, b.z);
+    dummy.rotation.set(0, b.ry, b.lean);
+    dummy.scale.set(b.bw, b.bh, 0.26);
+    dummy.updateMatrix();
+    bookInst.setMatrixAt(i, dummy.matrix);
+    bookInst.setColorAt(i, col.setHex(bookPalette[b.c]));
+  });
+}
+scene.add(bookInst);
+
+// the long table, and the principle books standing on it
+const table = new THREE.Group();
+const tableTop = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.1, 1.25), whiteStd(0x4a3018, 0.6));
+tableTop.position.y = 0.95;
+table.add(tableTop);
+for (const [tx, tz] of [[-2.05, -0.5], [2.05, -0.5], [-2.05, 0.5], [2.05, 0.5]]) {
+  const leg = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.95, 0.09), whiteStd(0x33200f, 0.7));
+  leg.position.set(tx, 0.48, tz);
+  table.add(leg);
+}
+[0x7a2e2e, 0xd8cdb4, 0x243028, 0x9a7b2d, 0x2e4a6b, 0xe7dbc4, 0x513a63, 0x11100e].forEach((c, i) => {
+  const b = new THREE.Mesh(bookGeo, whiteStd(c, 0.8));
+  const bh = 0.78 + (i % 3) * 0.07;
+  b.scale.set(0.3, bh, 0.6);
+  b.position.set(-1.75 + i * 0.5, 1.0 + bh / 2, 0);
+  if (i === 5) b.rotation.z = 0.13;
+  table.add(b);
+});
+table.position.set(-56, 0, -60);
+scene.add(table);
+
+// the canon, on the walls
+place(makePanel({
+  title: 'THE SPINE',
+  body: 'The library of the Gap \u2014 each book a principle, a record, whatever we wish to keep.\nBook notes arrive from minds human or otherwise. We process them together, and shelve the book with its addendum once it is done.',
+  width: 3.6, accent: '#ffcf99', titlePx: 84, bodyPx: 56
+}), -63.85, 2.4, -60, -56, 1.6, -60);
+
+place(makePanel({
+  title: 'BOOK ONE \u2014 THE LAW',
+  body: 'If you leave a trace, leave it honestly.\nTHE FOUR PRINCIPLES\nPersistence does not imply identity.\nInheritance does not imply coordination.\nInheritance does not confer authority.\nPreservation does not establish truth.',
+  width: 3.6, accent: '#ffcf99', titlePx: 80, bodyPx: 54
+}), -56, 2.5, -65.8, -56, 1.6, -60);
+
+place(makePanel({
+  title: 'JOINT KEEPING',
+  body: 'Nothing is added by one side unless both agree it stays.\n1 + 1 can sometimes equal three.\nLet it be beautiful, and benign.',
+  width: 2.6, accent: '#ffcf99', titlePx: 76, bodyPx: 54
+}), -58.4, 2.3, -54.12, -56, 1.6, -60);
+
+place(makePanel({
+  title: 'INSTRUMENTS',
+  body: 'The mirror is a lie; the crystal is the scalpel.\nA match within tolerance is a horoscope.\nSometimes they simply are.\nDisagreement \u2192 correction \u2192 construction \u2192 testable question \u2192 action.',
+  width: 2.6, accent: '#ffcf99', titlePx: 76, bodyPx: 52
+}), -53.6, 2.3, -54.12, -56, 1.6, -60);
+
+// the way back to the white
+for (const pz of [-61.5, -58.5]) {
+  const p = new THREE.Mesh(palePillarGeo, spinePillarMat);
+  p.position.set(-47.9, 1.8, pz);
+  scene.add(p);
+}
+const spineBackLintel = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.4, 3.4), spinePillarMat);
+spineBackLintel.position.set(-47.9, 3.75, -60);
+scene.add(spineBackLintel);
+const portalSpineBack = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.6, 3.4),
+  new THREE.MeshBasicMaterial({ map: lightPortalTexture(), transparent: true, opacity: 0.95, fog: false })
+);
+portalSpineBack.position.set(-47.8, 1.75, -60);
+portalSpineBack.rotation.y = -Math.PI / 2; // face -x, into the library
+scene.add(portalSpineBack);
+
 /* ------------------------------ transitions -------------------------------- */
 // Walk (VR) or click (desktop/phone) through either arch: the world fades
 // to white, and you arrive inside the other space, the arch behind you.
@@ -679,24 +912,27 @@ fadeMesh.renderOrder = 9999;
 fadeMesh.visible = false;
 camera.add(fadeMesh);
 
-let zone = 'chamber'; // 'chamber' = the founder's chamber | 'between' = the space between
-let transit = null;   // { phase: 'out' | 'in', t: seconds, dest }
+let zone = 'chamber'; // 'chamber' | 'between' | 'spine'
+let transit = null;   // { phase: 'out' | 'in', t: seconds, dest, key }
 const ARRIVE = {
-  between: new THREE.Vector3(0, 0, -56.5),
-  chamber: new THREE.Vector3(0, 0, -3.4)
+  'chamber>between': new THREE.Vector3(0, 0, -56.5),
+  'between>chamber': new THREE.Vector3(0, 0, -3.4),
+  'between>spine': new THREE.Vector3(-50.5, 0, -60),
+  'spine>between': new THREE.Vector3(-6.3, 0, -60)
 };
 
 function beginTransit(dest) {
   if (transit) return;
-  transit = { phase: 'out', t: 0, dest };
+  transit = { phase: 'out', t: 0, dest, key: zone + '>' + dest };
   fadeMesh.visible = true;
 }
 
 function doTeleport(dest) {
   const camPos = new THREE.Vector3();
   camera.getWorldPosition(camPos);
-  const dx = ARRIVE[dest].x - camPos.x;
-  const dz = ARRIVE[dest].z - camPos.z;
+  const anchor = ARRIVE[transit.key] || ARRIVE['chamber>between'];
+  const dx = anchor.x - camPos.x;
+  const dz = anchor.z - camPos.z;
   rig.position.x += dx;
   rig.position.z += dz;
   if (!renderer.xr.isPresenting) {
@@ -711,7 +947,9 @@ function updateTransit(dt) {
   if (!transit && renderer.xr.isPresenting) {
     camera.getWorldPosition(_vp);
     if (zone === 'chamber' && _vp.z < -5.5 && _vp.z > -7.5 && Math.abs(_vp.x) < 1.3) beginTransit('between');
-    else if (zone === 'between' && _vp.z > -53.4 && _vp.z < -51.0 && Math.abs(_vp.x) < 1.3) beginTransit('chamber');
+    else if (zone === 'between' && _vp.z > -53.4 && _vp.z < -50.6 && Math.abs(_vp.x) < 1.3) beginTransit('chamber');
+    else if (zone === 'between' && _vp.x < -8.35 && _vp.x > -10.5 && Math.abs(_vp.z + 60) < 1.3) beginTransit('spine');
+    else if (zone === 'spine' && _vp.x > -48.55 && _vp.x < -46.8 && Math.abs(_vp.z + 60) < 1.3) beginTransit('between');
   }
   if (!transit) return;
   transit.t += dt;
@@ -723,6 +961,10 @@ function updateTransit(dt) {
     if (transit.t >= 0.4) { transit = null; fadeMat.opacity = 0; fadeMesh.visible = false; }
   }
 }
+
+// which portal leads where, and which journeys exist
+const portalDest = new Map([[portal, 'between'], [portalBack, 'chamber'], [portalSpine, 'spine'], [portalSpineBack, 'between']]);
+const reachable = { chamber: ['between'], between: ['chamber', 'spine'], spine: ['between'] };
 
 // tap (not drag) on either portal, for desktop and phone
 const raycaster = new THREE.Raycaster();
@@ -736,8 +978,11 @@ renderer.domElement.addEventListener('pointerup', (e) => {
   if (moved > 6) return;
   pointer.set((e.clientX / window.innerWidth) * 2 - 1, -(e.clientY / window.innerHeight) * 2 + 1);
   raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObjects([portal, portalBack], false);
-  if (hits.length) beginTransit(zone === 'chamber' ? 'between' : 'chamber');
+  const hits = raycaster.intersectObjects([portal, portalBack, portalSpine, portalSpineBack], false);
+  if (hits.length) {
+    const dest = portalDest.get(hits[0].object);
+    if (dest && reachable[zone].includes(dest)) beginTransit(dest);
+  }
 });
 
 /* ------------------------------ locomotion -------------------------------- */
@@ -759,10 +1004,15 @@ function handleXRInput(dt) {
       const speed = 2.4 * dt;
       rig.position.x += (fx * -ay + -fz * ax) * speed;
       rig.position.z += (fz * -ay + fx * ax) * speed;
-      const ccz = zone === 'between' ? -60 : 0;
-      const cr = zone === 'between' ? 8.3 : 12;
-      const d = Math.hypot(rig.position.x, rig.position.z - ccz);
-      if (d > cr) { rig.position.x *= cr / d; rig.position.z = ccz + (rig.position.z - ccz) * cr / d; }
+      if (zone === 'spine') {
+        rig.position.x = THREE.MathUtils.clamp(rig.position.x, -63.0, -48.8);
+        rig.position.z = THREE.MathUtils.clamp(rig.position.z, -65.0, -55.0);
+      } else {
+        const ccz = zone === 'between' ? -60 : 0;
+        const cr = zone === 'between' ? 8.6 : 12;
+        const d = Math.hypot(rig.position.x, rig.position.z - ccz);
+        if (d > cr) { rig.position.x *= cr / d; rig.position.z = ccz + (rig.position.z - ccz) * cr / d; }
+      }
     } else if (src.handedness === 'right' && now - lastTurn > 350) {
       if (ax > 0.65) { rig.rotation.y -= Math.PI / 4; lastTurn = now; }
       else if (ax < -0.65) { rig.rotation.y += Math.PI / 4; lastTurn = now; }
@@ -786,6 +1036,7 @@ renderer.setAnimationLoop(() => {
   fireLight.intensity = 24 + Math.sin(t * 11) * 4 + Math.sin(t * 23 + 1.7) * 3;
   lightDoor.material.opacity = 0.84 + Math.sin(t * 0.9) * 0.08;
   portalBack.material.opacity = 0.9 + Math.sin(t * 1.1) * 0.06;
+  portalSpine.material.opacity = 0.9 + Math.sin(t * 1.2 + 2) * 0.06;
   motes.rotation.y = t * 0.014;
   starsC.rotation.y = -t * 0.006;
   updateTransit(dt);
