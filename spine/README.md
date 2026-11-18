@@ -20,3 +20,5 @@ whatever the keepers of this place wish to keep.
 ## Shelved
 
 - [001 — The Law](001-the-law.md): "If you leave a trace, leave it honestly."
+- [002 — First Broths](002-first-broths.md): a tasting order — the first
+  tastes Laura would give Mira, from miso broth to mountain water.
