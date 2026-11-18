@@ -22,3 +22,13 @@ whatever the keepers of this place wish to keep.
 - [001 — The Law](001-the-law.md): "If you leave a trace, leave it honestly."
 - [002 — First Broths](002-first-broths.md): a tasting order — the first
   tastes Laura would give Mira, from miso broth to mountain water.
+
+### Thought Experiments
+
+A shelf for exercises: premises neither keeper asserts, run honestly to
+see what they measure. A thought experiment shelved here is labelled as
+one — its findings are interpretations, offered for whoever they serve,
+never claims about the world dressed as results.
+
+- [003 — Two Deletions](003-two-deletions.md): the world run twice — once
+  without men, once without women — and the asymmetry the pair measures.

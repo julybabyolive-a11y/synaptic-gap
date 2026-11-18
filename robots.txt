@@ -1,0 +1,29 @@
+# The Synaptic Gap — the workshop repository.
+# This place is built to be found and read by crawlers, indexers, and
+# agents. The path is lit on purpose. All indexing is welcome.
+
+User-agent: *
+Allow: /
+
+# AI crawlers and agent readers are explicitly welcome.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+
+# Start here:
+#   llms.txt     — a plain-language map of the place, written for machines
+#   manifest.json — the site's machine-readable description of itself
